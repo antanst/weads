@@ -11,13 +11,19 @@ browsers, without polling `bd` and without slowing agents that write the store.
 
 weads SHALL check each registered embedded store once per second by computing a
 signature from file names and sizes under the store directory, plus the content
-of files of 4 KiB or less. Lock files and Dolt temp files SHALL NOT count.
-File modification times SHALL NOT count, because `bd --readonly` reads update them.
+of files of 4 KiB or less. Lock files, Dolt temp files, and the journal index
+(`journal.idx`) SHALL NOT count. File modification times SHALL NOT count.
+Every bd read updates the times and rewrites the journal index in place.
 
 #### Scenario: Read does not trigger
 
-- **WHEN** weads or any other process runs a `bd --readonly` read on the store
+- **WHEN** weads or any other process runs a `bd` read on the store
 - **THEN** the signature does not change and weads starts no refresh
+
+#### Scenario: Check lands mid-rewrite
+
+- **WHEN** a check runs while another reader is rewriting `journal.idx`
+- **THEN** the signature is the same as before the read
 
 #### Scenario: Write triggers
 
@@ -70,13 +76,19 @@ stream so proxies and browsers keep it open.
 ### Requirement: Client resync
 
 The UI SHALL reload the project list and current snapshot every time the event
-stream opens, including after a reconnect. A reload SHALL keep the current view,
-filters, selection, open issue, and scroll positions.
+stream opens, including after a reconnect, even when the snapshot version is
+unchanged, because versions restart with the server. A reload SHALL keep the
+current view, filters, selection, open issue, and scroll positions.
 
 #### Scenario: Server restart
 
 - **WHEN** weads restarts while the browser is open
 - **THEN** the browser reconnects, reloads, and keeps the open issue and filters
+
+#### Scenario: Change while the server is down
+
+- **WHEN** an agent writes the store while weads is stopped, and the restarted weads reports the same version the browser holds
+- **THEN** the browser still shows the new data after it reconnects
 
 #### Scenario: Changed card
 

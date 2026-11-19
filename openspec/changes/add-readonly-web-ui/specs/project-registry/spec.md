@@ -105,14 +105,21 @@ A directory that does not use beads SHALL make weads exit with an error.
 ### Requirement: Directory browser
 
 `GET /api/fs?path=` SHALL list the subdirectories of a directory, sorted by name,
-skipping hidden ones. It SHALL mark each that contains a `.beads` directory,
+skipping hidden ones. It SHALL mark each whose `.beads` directory holds a bd
+project marker (`metadata.json`, `config.yaml`, `embeddeddolt/`, or `dolt/`),
 return the parent path, and default to the home directory. It SHALL list
-directories only, never file names or contents.
+directories only, never file names or contents. The mark is a hint. Adding a
+project still resolves it with `bd where`.
 
 #### Scenario: Browse work folder
 
 - **WHEN** the user browses `~/work`
 - **THEN** the response lists its subdirectories and marks `go-drip` and `mo` as beads projects
+
+#### Scenario: bd's own state folder
+
+- **WHEN** the user browses `~` and `~/.beads` holds only bd's metrics state
+- **THEN** the home directory is not marked as a beads project
 
 ### Requirement: Native folder picker
 
@@ -122,7 +129,7 @@ list SHALL report the picker as unavailable and the UI SHALL hide its button.
 
 #### Scenario: Pick in Finder
 
-- **WHEN** the user clicks "Choose folder…" and selects `~/work/mo`
+- **WHEN** the user clicks "Choose in Finder…" and selects `~/work/mo`
 - **THEN** the UI receives that path and adds it as a project
 
 ### Requirement: Project selector UI

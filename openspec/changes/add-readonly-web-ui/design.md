@@ -14,8 +14,10 @@ source, measured on the go-drip workspace (22 issues).
   between tries) when another process holds it. So every bd read can delay an
   agent's write while the read is open. Reads must be rare.
 - A `--readonly` read updates the modification time of `noms/manifest`,
-  `noms/journal.idx`, and the journal file. It does not change any file size
-  or the manifest content. A write appends to the journal, so its size grows.
+  `noms/journal.idx`, and the journal file. It rewrites `journal.idx` in place,
+  so its size drops for a moment during the read (seen at 131,072 and 212,992
+  of 221,328 bytes). It changes no other size and not the manifest content. A
+  write appends to the journal, so its size grows.
 - `bd where --json` resolves the workspace from any subdirectory or worktree,
   and exits 1 with `no_beads_directory` when none exists.
 
@@ -52,9 +54,16 @@ because the export is optional and can be stale.
 A loop runs once per second. For each embedded project it walks the store
 directory and builds a signature from relative path and size of every file,
 plus the content of files of 4 KiB or less (manifests, repo state). It skips
-`LOCK`, `.lock`, and `temptf/`. It ignores modification times, because
-reads change them. weads runs bd only when the signature changes. The walk
-touches about ten files, so the cost is negligible.
+`LOCK`, `.lock`, `temptf/`, and `journal.idx`, and ignores modification times,
+because reads change them. The journal index is derived from the journal, and
+every write appends to the journal, so skipping the index hides no write.
+weads runs bd only when the signature changes. The walk touches about ten
+files, so the cost is negligible.
+
+The journal index rule came from a live test. Another bd reader (a running
+beads-web, polling every 15 s) made weads refresh go-drip in bursts of two or
+three. A check had caught `journal.idx` mid-rewrite, saved that transient
+signature, and then saw the settled file as a second change.
 
 The order is: compute the signature, then refresh. A write that lands during a
 refresh changes the next signature, so weads never misses it.
@@ -77,6 +86,9 @@ not delay agents.
 needs. weads encodes each snapshot to JSON once per refresh and serves those
 bytes from memory. It compares the new issue bytes with the old ones, so a
 refresh that changes nothing sends nothing.
+
+Snapshot versions are per process and restart at 1. The browser therefore
+refetches after every stream reconnect instead of trusting a matching version.
 
 Alternatives considered: WebSocket (needs a dependency, two-way is not needed),
 and sending whole snapshots on the stream (every client would get every
@@ -105,7 +117,7 @@ weight without a gain.
 ### Fonts embedded, theme from the system
 
 Inter and JetBrains Mono (both SIL OFL) are embedded as variable WOFF2 Latin
-subsets, about 150 KB together, with their license text. The color tokens sit
+subsets, about 80 KB together, with their license text. The color tokens sit
 on `:root` for dark, and a `prefers-color-scheme: light` media query overrides
 them. The browser switches at once, with no JavaScript.
 
