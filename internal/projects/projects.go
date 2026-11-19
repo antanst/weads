@@ -149,6 +149,9 @@ func (m *Manager) Add(ctx context.Context, dir string) (Summary, bool, error) {
 	if fi, err := os.Stat(abs); err != nil || !fi.IsDir() {
 		return Summary{}, false, &InputError{Msg: abs + " is not a directory."}
 	}
+	if s, ok := m.registered(abs); ok {
+		return s, false, nil
+	}
 	ws, err := m.bd.Where(ctx, abs)
 	if nw, ok := errors.AsType[*bd.NoWorkspaceError](err); ok {
 		return Summary{}, false, &InputError{Msg: nw.Message}
@@ -181,6 +184,19 @@ func (m *Manager) Add(ctx context.Context, dir string) (Summary, bool, error) {
 	m.emit(Event{Type: "projects"})
 	m.poke()
 	return p.summary(), true, nil
+}
+
+// registered returns the resolved project whose root is dir, so a restart
+// that re-adds configured projects runs no bd.
+func (m *Manager) registered(dir string) (Summary, bool) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	for _, p := range m.list {
+		if p.root == dir && p.ws.BeadsDir != "" {
+			return p.summary(), true
+		}
+	}
+	return Summary{}, false
 }
 
 // Remove unregisters a project. Its files stay untouched.

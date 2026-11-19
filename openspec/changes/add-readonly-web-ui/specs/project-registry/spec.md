@@ -102,6 +102,50 @@ A directory that does not use beads SHALL make weads exit with an error.
 - **WHEN** the user runs `weads ~/work/mo`
 - **THEN** `mo` is registered and appears in the UI
 
+### Requirement: Settings from .env
+
+weads SHALL read its startup settings from the environment. A `.env` file in the
+current directory SHALL fill in variables the environment does not already set.
+
+#### Scenario: Environment wins
+
+- **WHEN** the environment sets `WEADS_WORK_DIR` and `.env` sets it too
+- **THEN** weads uses the environment value
+
+### Requirement: Configured projects
+
+weads SHALL add each folder in the comma-separated `WEADS_PROJECTS` at startup,
+before the work folder and positional arguments. A folder that is not a beads
+project SHALL make weads exit with an error naming the setting. Re-adding a
+registered, resolved project SHALL run no `bd` command.
+
+#### Scenario: Configured projects
+
+- **WHEN** `.env` sets `WEADS_PROJECTS=~/work/go-drip,~/work/mo`
+- **THEN** both are registered after startup
+
+#### Scenario: Restart with configured projects
+
+- **WHEN** weads restarts and every configured project is already registered
+- **THEN** startup runs `bd where` only to re-resolve the saved projects
+
+### Requirement: Work folder scan
+
+At startup weads SHALL add each top-level, non-hidden folder of `WEADS_WORK_DIR`
+that holds a bd project marker, without looking deeper. A scanned folder that
+fails to resolve SHALL be skipped with a warning. When the setting is unset or
+the folder does not exist, weads SHALL skip the scan.
+
+#### Scenario: Work folder scan
+
+- **WHEN** `WEADS_WORK_DIR=~/work` and only `~/work/go-drip` and `~/work/mo` hold beads markers
+- **THEN** weads adds those two and runs `bd where` for no other folder
+
+#### Scenario: Missing work folder
+
+- **WHEN** `WEADS_WORK_DIR=~/.work` and that folder does not exist
+- **THEN** weads prints a note, scans nothing, and starts
+
 ### Requirement: Directory browser
 
 `GET /api/fs?path=` SHALL list the subdirectories of a directory, sorted by name,

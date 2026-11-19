@@ -30,6 +30,12 @@
 - [x] 5.4 Add comments to the detail activity section, the actor-based Mine filter, and the Jira link from the snapshot, and verify on an issue fixture with comments
 - [x] 5.5 Add the project selector (dialog with path input, directory browser, beads highlighting, macOS picker button, inline errors), sidebar removal with undo, and the empty state, and verify by adding and removing a project in the browser
 
-## 6. Integration check
+## 6. Startup settings
 
-- [x] 6.1 Run the binary on go-drip and mo, check board, list, graph, detail, palette, and keyboard against the specs in headless Chrome, confirm an idle store starts no bd process, and run `go vet ./...` and `go test ./...`
+- [x] 6.1 Implement `internal/config` (load `.env` without overriding set variables, read `WEADS_WORK_DIR` and `WEADS_PROJECTS`), and verify with unit tests for comments, quotes, `export`, environment precedence, a missing file, and a malformed line
+- [x] 6.2 Move the bd marker check to `projects.UsesBeads`, add `projects.Scan` and a no-bd re-add of registered roots, and verify with unit tests for the scan filter and the re-add
+- [x] 6.3 Wire the settings into `main.go` (configured projects fatal, scanned folders skipped with a warning, missing work folder noted), add the gitignored `.env` with `WEADS_WORK_DIR=~/.work` and `WEADS_PROJECTS=~/work/go-drip,~/work/mo`, and verify startup on a fresh and an existing registry
+
+## 7. Integration check
+
+- [x] 7.1 Run the binary on go-drip and mo, check board, list, graph, detail, palette, and keyboard against the specs in headless Chrome, confirm an idle store starts no bd process, and run `go vet ./...` and `go test ./...`

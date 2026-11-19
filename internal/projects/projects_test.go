@@ -4,9 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"io/fs"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -117,6 +119,9 @@ func TestAddRemoveReload(t *testing.T) {
 	}
 	if got := len(readLog(t, log)); got != calls {
 		t.Errorf("invalid paths ran bd %d times", got-calls)
+	}
+	if again, created, err := m.Add(ctx, s.Path); err != nil || created || again.ID != "demo" || len(readLog(t, log)) != calls {
+		t.Errorf("re-Add(root) = %+v, %v, %v; want the existing project with no bd call", again, created, err)
 	}
 	_, _, err = m.Add(ctx, t.TempDir())
 	if ie, ok := errors.AsType[*InputError](err); !ok || ie.Msg != "No active beads workspace found." {
@@ -318,6 +323,25 @@ func TestActor(t *testing.T) {
 	}
 	if got := actor(ctx, t.TempDir()); got != "sysuser" {
 		t.Errorf("fallback: %q", got)
+	}
+}
+
+func TestScan(t *testing.T) {
+	work := t.TempDir()
+	for _, d := range []string{"alpha/.beads/embeddeddolt", "beta/.beads/eventsData", ".hidden/.beads/embeddeddolt", "gamma/sub/.beads/embeddeddolt", "delta/.beads"} {
+		if err := os.MkdirAll(filepath.Join(work, d), 0o755); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := os.WriteFile(filepath.Join(work, "delta", ".beads", "config.yaml"), nil, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	got, err := Scan(work)
+	if want := []string{filepath.Join(work, "alpha"), filepath.Join(work, "delta")}; err != nil || !slices.Equal(got, want) {
+		t.Errorf("Scan = %v, %v; want %v", got, err, want)
+	}
+	if _, err := Scan(filepath.Join(work, "missing")); !errors.Is(err, fs.ErrNotExist) {
+		t.Errorf("Scan(missing) error = %v, want ErrNotExist", err)
 	}
 }
 

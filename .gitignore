@@ -1,6 +1,9 @@
 # Design brainstorm output (contains real project data)
 .superpowers/
 
+# Local settings (machine-specific paths)
+.env
+
 # Build output
 /weads
 /dist/

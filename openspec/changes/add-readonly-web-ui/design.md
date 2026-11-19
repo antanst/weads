@@ -128,6 +128,24 @@ entry with `bd where` on start, so it never trusts stale paths. The id is the
 issue prefix, with a numeric suffix when taken. The current actor and the Jira
 base URL are read once per resolve. A config change needs a restart.
 
+### Startup settings in `.env`
+
+weads reads `WEADS_WORK_DIR` and `WEADS_PROJECTS` from the environment. A small
+built-in parser loads `.env` from the current directory first, and never
+overrides a variable that is already set. Because `.env` fills the process
+environment, it can also carry bd variables such as `BD_DISABLE_METRICS=1`.
+`.env` is gitignored, because its paths are machine-specific.
+
+Configured and scanned folders go through the same `Add` as the UI, so they
+persist in the registry. A project removed in the UI comes back on the next
+start while a setting still names it. The work folder scan checks bd's project
+markers before running `bd where`, so a folder of 100+ repos costs a directory
+read and a few stats. An explicit folder that fails is fatal. A scanned folder
+that fails is skipped, so one broken repo cannot block startup.
+
+Alternative considered: a third-party dotenv package. Rejected, because the
+format needed here fits in 40 lines and the module has one dependency.
+
 ### Security
 
 weads checks the Host header on every request (against DNS rebinding) and the
