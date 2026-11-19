@@ -165,6 +165,17 @@ project still resolves it with `bd where`.
 - **WHEN** the user browses `~` and `~/.beads` holds only bd's metrics state
 - **THEN** the home directory is not marked as a beads project
 
+### Requirement: Registered folders in the browser
+
+`GET /api/fs` SHALL return the project id for the browsed directory and for each
+marked subdirectory whose path, after resolving symlinks, is a registered
+project root.
+
+#### Scenario: Already added
+
+- **WHEN** the user browses `~/work` and `go-drip` is registered as project `go-drip`
+- **THEN** the `go-drip` entry carries project id `go-drip`
+
 ### Requirement: Native folder picker
 
 On macOS, `POST /api/pick` SHALL open the system folder chooser and return the
@@ -180,8 +191,9 @@ list SHALL report the picker as unavailable and the UI SHALL hide its button.
 
 The UI SHALL offer "Add project" from the sidebar, the palette, and the empty
 state. The dialog SHALL accept a typed path, browse directories, and highlight
-beads projects. After an add, the UI SHALL switch to the new project. Each
-sidebar project SHALL offer removal.
+beads projects. A folder that is already a project SHALL show "added" and an
+"Open" action that switches to it. After an add, the UI SHALL switch to the new
+project. Each sidebar project SHALL offer removal.
 
 #### Scenario: First run
 

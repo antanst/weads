@@ -194,13 +194,14 @@ func (s *Server) events(w http.ResponseWriter, r *http.Request) {
 }
 
 type dirEntry struct {
-	Name  string `json:"name"`
-	Path  string `json:"path"`
-	Beads bool   `json:"beads"`
+	Name    string `json:"name"`
+	Path    string `json:"path"`
+	Beads   bool   `json:"beads"`
+	Project string `json:"project,omitempty"`
 }
 
 // browse lists the subdirectories of a directory and marks the ones that
-// use beads. It never lists files.
+// use beads or are already projects. It never lists files.
 func (s *Server) browse(w http.ResponseWriter, r *http.Request) {
 	p := r.URL.Query().Get("path")
 	if p == "" {
@@ -216,6 +217,10 @@ func (s *Server) browse(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusUnprocessableEntity, "Cannot open "+projects.Tildify(dir)+".")
 		return
 	}
+	added := map[string]string{}
+	for _, p := range s.m.Summaries() {
+		added[realPath(p.Path)] = p.ID
+	}
 	dirs := []dirEntry{}
 	for _, e := range entries {
 		if strings.HasPrefix(e.Name(), ".") || len(dirs) == maxDirs {
@@ -225,7 +230,11 @@ func (s *Server) browse(w http.ResponseWriter, r *http.Request) {
 		if !e.IsDir() && (e.Type()&fs.ModeSymlink == 0 || !isDir(full)) {
 			continue
 		}
-		dirs = append(dirs, dirEntry{Name: e.Name(), Path: full, Beads: projects.UsesBeads(full)})
+		d := dirEntry{Name: e.Name(), Path: full, Beads: projects.UsesBeads(full)}
+		if d.Beads {
+			d.Project = added[realPath(full)]
+		}
+		dirs = append(dirs, d)
 	}
 	slices.SortFunc(dirs, func(a, b dirEntry) int { return strings.Compare(strings.ToLower(a.Name), strings.ToLower(b.Name)) })
 	parent := filepath.Dir(dir)
@@ -237,6 +246,7 @@ func (s *Server) browse(w http.ResponseWriter, r *http.Request) {
 		"display": projects.Tildify(dir),
 		"parent":  parent,
 		"beads":   projects.UsesBeads(dir),
+		"project": added[realPath(dir)],
 		"dirs":    dirs,
 	})
 }
@@ -277,6 +287,14 @@ func (s *Server) pick(w http.ResponseWriter, r *http.Request) {
 func isDir(path string) bool {
 	fi, err := os.Stat(path)
 	return err == nil && fi.IsDir()
+}
+
+// realPath resolves symlinks so a folder matches the root bd reported for it.
+func realPath(path string) string {
+	if p, err := filepath.EvalSymlinks(path); err == nil {
+		return p
+	}
+	return path
 }
 
 func writeJSON(w http.ResponseWriter, status int, v any) {

@@ -185,14 +185,18 @@ func TestEvents(t *testing.T) {
 }
 
 func TestBrowse(t *testing.T) {
-	_, h := newTestServer(t)
+	s, h := newTestServer(t)
 	home := t.TempDir()
 	t.Setenv("HOME", home)
 	work := filepath.Join(home, "work")
-	for _, d := range []string{"alpha/.beads/embeddeddolt", "Beta/.beads/eventsData", ".hidden/.beads/embeddeddolt"} {
+	for _, d := range []string{"Beta/.beads/eventsData", ".hidden/.beads/embeddeddolt"} {
 		if err := os.MkdirAll(filepath.Join(work, d), 0o755); err != nil {
 			t.Fatal(err)
 		}
+	}
+	bdfake.Workspace(t, filepath.Join(work, "alpha"), "alpha")
+	if _, _, err := s.m.Add(context.Background(), filepath.Join(work, "alpha")); err != nil {
+		t.Fatal(err)
 	}
 	if err := os.WriteFile(filepath.Join(work, "notes.txt"), []byte("x"), 0o644); err != nil {
 		t.Fatal(err)
@@ -210,9 +214,9 @@ func TestBrowse(t *testing.T) {
 	decode(t, do(t, h, "GET", "/api/fs?path=~/work", "localhost", "", ""), &got)
 	var names []string
 	for _, d := range got.Dirs {
-		names = append(names, d.Name+map[bool]string{true: "*"}[d.Beads])
+		names = append(names, d.Name+map[bool]string{true: "*"}[d.Beads]+d.Project)
 	}
-	if strings.Join(names, ",") != "alpha*,Beta,link*" || got.Display != "~/work" || got.Parent != home {
+	if strings.Join(names, ",") != "alpha*alpha,Beta,link*alpha" || got.Display != "~/work" || got.Parent != home {
 		t.Errorf("listing = %+v (names %v)", got, names)
 	}
 	if w := do(t, h, "GET", "/api/fs?path=~/missing", "localhost", "", ""); w.Code != http.StatusUnprocessableEntity {

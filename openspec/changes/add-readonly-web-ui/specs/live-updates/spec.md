@@ -93,4 +93,4 @@ current view, filters, selection, open issue, and scroll positions.
 #### Scenario: Changed card
 
 - **WHEN** a reload changes an issue's `updated_at`
-- **THEN** the UI briefly highlights that issue's card or row
+- **THEN** the UI briefly highlights that issue's card or row, and the highlight survives a re-render from another event

@@ -30,8 +30,10 @@ Blocked when status is `blocked` or an open issue it depends on through
 The board SHALL show columns Ready, In progress, Blocked, Deferred (only when a
 deferred issue exists), and Closed. Swimlanes by epic SHALL be on by default and
 toggle with `s`. A hairline that fades to the right SHALL separate each lane from
-the one above it. Ready SHALL sort like `bd ready`: priority, then created time,
-then id. Closed SHALL show the 3 most recent per lane with a "+N more" control.
+the one above it. A project with no epics SHALL show one flat board with the
+swimlane toggle disabled. Ready SHALL sort like `bd ready`: priority, then
+created time, then id. Closed SHALL show the 3 most recent per lane with a "+N
+more" control.
 
 #### Scenario: Ready order
 
@@ -43,12 +45,23 @@ then id. Closed SHALL show the 3 most recent per lane with a "+N more" control.
 - **WHEN** every child of an epic is closed
 - **THEN** that lane starts collapsed and shows "all closed"
 
+#### Scenario: No epics
+
+- **WHEN** the project has issues but no epic
+- **THEN** the board shows no lane header and the swimlane toggle is disabled
+
 ### Requirement: Card content
 
 Each card SHALL show the type icon, short id, priority, title, labels not
 inherited from the parent epic, blocking link count, comment count, assignee,
 age, and one reason line: the first open blocker and its state, the close
-reason, a live agent lease with time left, or an expired lease.
+reason, a live agent lease with time left, an expired lease, or the defer date.
+Labels that do not fit on one line SHALL be hidden whole, never cut mid-label.
+
+#### Scenario: Snoozed issue
+
+- **WHEN** a deferred issue has `defer_until` set
+- **THEN** its card shows "Until" followed by that date
 
 #### Scenario: Live lease
 
@@ -111,6 +124,11 @@ and a copyable `bd show <id>` command. Bead ids in text SHALL open that issue.
 - **WHEN** the user opens a closed issue
 - **THEN** the callout leads with when it closed and its close reason
 
+#### Scenario: Deferred issue
+
+- **WHEN** the user opens a deferred issue
+- **THEN** the callout shows "Deferred until" and the date when `defer_until` is set, and otherwise says the issue waits for `bd undefer`
+
 #### Scenario: Comments
 
 - **WHEN** the user opens an issue with comments
@@ -131,6 +149,35 @@ as removable chips, and `Esc` SHALL clear them when no panel is open.
 
 - **WHEN** the user turns on Mine
 - **THEN** only issues assigned to the snapshot actor remain
+
+### Requirement: Empty views
+
+When filters hide every issue, the view SHALL say that nothing matches and
+offer "Clear filters". When the project has no issues, or only epics, the view
+SHALL say so and SHALL NOT offer to clear filters.
+
+#### Scenario: Nothing matches
+
+- **WHEN** the text filter matches no issue
+- **THEN** the view shows "No issues match" with a "Clear filters" button
+
+#### Scenario: New project
+
+- **WHEN** project `empty` has no issues
+- **THEN** the view shows "No issues in empty yet"
+
+### Requirement: Responsive layout
+
+The top bar and status bar SHALL fit the main area at every window width from
+1024 px up, with the detail panel open or closed. They SHALL drop key hints,
+view labels, quick filters, and status hints as the main area narrows, before
+they cut the project name. The detail panel width SHALL scale with the window
+between 420 px and 580 px.
+
+#### Scenario: Narrow window with detail open
+
+- **WHEN** the window is 1024 px wide and the detail panel is open
+- **THEN** the top bar does not overflow and the project name shows in full
 
 ### Requirement: Command palette
 

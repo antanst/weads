@@ -39,3 +39,7 @@
 ## 7. Integration check
 
 - [x] 7.1 Run the binary on go-drip and mo, check board, list, graph, detail, palette, and keyboard against the specs in headless Chrome, confirm an idle store starts no bd process, and run `go vet ./...` and `go test ./...`
+
+## 8. UI polish
+
+- [x] 8.1 Fix layout and state bugs found in a full UI sweep (topbar and status bar at narrow widths, whole-label wrapping, list columns with the detail open, flat board without epics, empty and broken states, deferred callout with `defer_until`, "added" folders in the dialog, highlight lost on re-render), and verify with screenshots in both themes from 1024 px to 1728 px wide and repeated live e2e runs

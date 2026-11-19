@@ -54,6 +54,7 @@ type Issue struct {
 	UpdatedAt          string       `json:"updated_at,omitempty"`
 	StartedAt          string       `json:"started_at,omitempty"`
 	ClosedAt           string       `json:"closed_at,omitempty"`
+	DeferUntil         string       `json:"defer_until,omitempty"`
 	LeaseExpiresAt     string       `json:"lease_expires_at,omitempty"`
 	HeartbeatAt        string       `json:"heartbeat_at,omitempty"`
 	ExternalRef        string       `json:"external_ref,omitempty"`

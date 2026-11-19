@@ -266,12 +266,14 @@ function why(i) {
     const blk = blockingDeps(i).map(([, on]) => P.byId.get(on)).filter(Boolean);
     if (blk.length) return `<div class="c-why ready">${ic('check', '', 12)}<span>Unblocked ${rel(blk.map(b => b.closed_at).sort().pop())} ago</span></div>`;
   }
+  if (i.state === 'deferred' && i.defer_until) return `<div class="c-why">${ic('clock', '', 12)}<span>Until ${fmtAbs(i.defer_until)}</span></div>`;
   return '';
 }
 function meta(i) {
   const links = blockingDeps(i).length + i.blocksOut.length;
   const ep = !S.lanes && i.parent && P.byId.get(i.parent);
-  return `<div class="c-meta">${labelChips(i)}${ep ? `<span class="epic-chip">${tico('epic', 11)}${esc(trunc(ep.title, 24))}</span>` : ''}<span class="sp"></span>`
+  const ls = labelChips(i);
+  return `<div class="c-meta">${ls ? `<span class="c-lbls">${ls}</span>` : ''}${ep ? `<span class="epic-chip">${tico('epic', 11)}${esc(trunc(ep.title, 24))}</span>` : ''}<span class="sp"></span>`
     + (links ? `<span class="m-dep" title="${links} blocking links">${ic('link', '', 12)}${links}</span>` : '')
     + (i.comment_count ? `<span class="m-dep" title="${i.comment_count} comments">${ic('msg', '', 12)}${i.comment_count}</span>` : '')
     + `${avatar(i.assignee)}<span class="c-age" title="Updated ${esc(fmtAbs(i.updated_at))}">${rel(i.updated_at)}</span></div>`;
@@ -280,7 +282,10 @@ const cls = i => `st-${i.state}${S.sel === i.id ? ' sel' : ''}${S.open === i.id 
 const card = i => `<div class="card ${cls(i)}" data-id="${esc(i.id)}">
   <div class="c-top">${tico(i.type)}<span class="c-id mono">${esc(short(i.id))}</span>${isLive(i) ? '<span class="live" title="Agent lease active"></span>' : ''}<span class="sp"></span><span title="P${i.priority} · ${PNAME[i.priority]}">${prio(i.priority)}</span></div>
   <div class="c-title">${hl(i.title)}</div>${why(i)}${meta(i)}</div>`;
-const empty = () => `<div class="empty">${ic('search', '', 22)}<b>No issues match</b><span>Try a different filter.</span><button class="chip-btn" data-act="clear" data-arg="all">Clear filters</button></div>`;
+const filtered = () => !!(S.queue || S.epic || S.label || S.q || S.quick.size);
+const empty = () => filtered()
+  ? `<div class="empty">${ic('search', '', 22)}<b>No issues match</b><span>Try a different filter.</span><button class="chip-btn" data-act="clear" data-arg="all">Clear filters</button></div>`
+  : `<div class="empty">${ic('board', '', 22)}<b>${P.epics.length ? 'Only epics so far' : `No issues in ${esc(P.name)} yet`}</b><span>New issues show up here within seconds of <code>bd create</code>.</span></div>`;
 
 /* ---------- board ---------- */
 function laneGroups(items) {
@@ -301,11 +306,11 @@ function renderBoard(items) {
   let cols = ['ready', 'progress', 'blocked', 'closed'];
   if (P.items.some(i => i.state === 'deferred')) cols.splice(3, 0, 'deferred');
   if (S.queue) cols = [S.queue];
-  const nav = cols.map(() => []);
-  let h = `<div class="board" style="--cols:${cols.length}">` + cols.map(c => `<div class="col-head">${sicon(c)}<span>${ST[c].name}</span><span class="count">${items.filter(i => i.state === c).length}</span>${c === 'ready' ? '<span class="sub">bd ready order</span>' : ''}</div>`).join('');
-  for (const L of S.lanes ? laneGroups(items) : [{ key: '_all', items }]) {
-    if (S.lanes) h += laneHead(L);
-    if (S.lanes && S.collapsed.has(L.key)) continue;
+  const nav = cols.map(() => []), lanes = S.lanes && P.epics.length > 0;
+  let h = `<div class="board${cols.length === 1 ? ' one' : ''}${lanes ? '' : ' flat'}" style="--cols:${cols.length}">` + cols.map(c => `<div class="col-head">${sicon(c)}<span>${ST[c].name}</span><span class="count">${items.filter(i => i.state === c).length}</span>${c === 'ready' ? '<span class="sub">bd ready order</span>' : ''}</div>`).join('');
+  for (const L of lanes ? laneGroups(items) : [{ key: '_all', items }]) {
+    if (lanes) h += laneHead(L);
+    if (lanes && S.collapsed.has(L.key)) continue;
     cols.forEach((c, ci) => {
       let list = L.items.filter(i => i.state === c).sort(SORT[c]), more = 0;
       const mk = L.key + ':' + c;
@@ -480,6 +485,12 @@ function callout(i) {
     const order = P.items.filter(x => x.state === 'ready').sort(SORT.ready);
     return `<div class="callout c-ready"><div class="co-h">${sicon('ready', 13)}Ready · #${order.indexOf(i) + 1} of ${order.length} in <code>bd ready</code> order</div><div class="co-note">Nothing blocks this issue.</div></div>`;
   }
+  if (i.state === 'deferred') {
+    const until = i.defer_until && ts(i.defer_until);
+    const note = !until ? 'Set aside on purpose. <code>bd ready</code> skips it until someone runs <code>bd undefer</code>.'
+      : until > NOW ? 'Snoozed. It returns to open once the date passes.' : 'The snooze has passed. The next <code>bd ready</code> returns it to open.';
+    return `<div class="callout c-deferred"><div class="co-h">${sicon('deferred', 13)}${until ? `Deferred until ${fmtAbs(i.defer_until)}` : 'Deferred'}</div><div class="co-note">${note}</div></div>`;
+  }
   return '';
 }
 function childrenSec(e) {
@@ -577,7 +588,7 @@ function renderSidebar() {
     P.items.forEach(i => (i.labels || []).forEach(l => labels.set(l, (labels.get(l) || 0) + 1)));
     const epics = P.epics.slice().sort((a, b) => (doneOf(a) === a.children.length) - (doneOf(b) === b.children.length) || a.priority - b.priority);
     h += `<div class="sb-sec"><div class="sb-h">Queues</div>${['ready', 'progress', 'blocked', 'closed'].map(s => `<div class="sb-item${S.queue === s ? ' on' : ''}" data-act="queue" data-arg="${s}">${sicon(s)}<span>${ST[s].name}</span><span class="n">${c(s)}</span></div>`).join('')}</div>
-    <div class="sb-sec"><div class="sb-h">Epics</div>${epics.map(e => `<div class="sb-item ep${S.epic === e.id ? ' on' : ''}${e.children.length && doneOf(e) === e.children.length ? ' done' : ''}" data-act="epic" data-arg="${esc(e.id)}" title="${esc(e.title)}">${tico('epic')}<span class="ell">${esc(e.title)}</span><span class="n">${doneOf(e)}/${e.children.length}</span>${e.children.length ? beadString(e.id, 18) : ''}</div>`).join('') || '<div class="sb-item faint">No epics</div>'}</div>
+    <div class="sb-sec"><div class="sb-h">Epics</div>${epics.map(e => `<div class="sb-item ep${S.epic === e.id ? ' on' : ''}${e.children.length && doneOf(e) === e.children.length ? ' done' : ''}" data-act="epic" data-arg="${esc(e.id)}" title="${esc(e.title)}">${tico('epic')}<span class="ell">${esc(e.title)}</span><span class="n">${doneOf(e)}/${e.children.length}</span>${e.children.length ? beadString(e.id, 18) : ''}</div>`).join('') || '<div class="sb-none">No epics</div>'}</div>
     ${labels.size ? `<div class="sb-sec"><div class="sb-h">Labels</div><div class="sb-labels">${[...labels].sort((a, b) => b[1] - a[1]).map(([l, n]) => `<span class="lbl${S.label === l ? ' on' : ''}${l === 'human' ? ' human' : ''}" style="--lc:${lcolor(l)}" data-act="label" data-arg="${esc(l)}">${l === 'human' ? ic('user', '', 10) : ''}${esc(l)}<span class="faint">${n}</span></span>`).join('')}</div></div>` : ''}`;
   }
   h += `<div class="sb-foot" title="Reads each store with bd --readonly and never writes">${ic('eye', '', 13)}Read-only<span class="sp"></span><span class="faint mono">${META.bd_version ? 'bd ' + esc(META.bd_version) : ''}</span></div>`;
@@ -588,7 +599,7 @@ function renderTopbar() {
   <label class="search">${ic('search', '', 14)}<input id="q" placeholder="Filter issues…" autocomplete="off" spellcheck="false"><kbd>/</kbd></label>
   <div class="quick">${Object.entries(QNAME).map(([k, v]) => `<button class="chip-btn" data-act="quick" data-arg="${k}">${k === 'mine' ? ic('user', '', 12) : ''}${k === 'mine' ? 'Mine' : v}</button>`).join('')}</div>
   <span class="sp"></span>
-  <div class="seg">${['board', 'list', 'graph'].map((v, k) => `<button data-act="view" data-arg="${v}">${ic(v, '', 13)}${VNAME[v]}<kbd>${k + 1}</kbd></button>`).join('')}</div>
+  <div class="seg">${['board', 'list', 'graph'].map((v, k) => `<button data-act="view" data-arg="${v}" title="${VNAME[v]} (${k + 1})">${ic(v, '', 13)}<span class="seg-t">${VNAME[v]}</span><kbd>${k + 1}</kbd></button>`).join('')}</div>
   <button class="icon-btn" id="lanes-btn" data-act="lanes" title="Swimlanes by epic (S)">${ic('lanes')}</button>`;
   $('#q').addEventListener('input', e => { S.q = e.target.value.trim(); render(); });
 }
@@ -601,7 +612,8 @@ function syncTopbar() {
     b.classList.toggle('on', S.quick.has(b.dataset.arg));
     if (b.dataset.arg === 'mine') b.title = P && P.actor ? `Assigned to ${P.actor}` : 'Assigned to me';
   });
-  const lb = $('#lanes-btn'); lb.classList.toggle('on', S.lanes && S.view === 'board'); lb.disabled = S.view !== 'board';
+  const lb = $('#lanes-btn'), lanes = S.view === 'board' && !!P && P.epics.length > 0;
+  lb.classList.toggle('on', S.lanes && lanes); lb.disabled = !lanes;
   if ($('#q').value.trim() !== S.q) $('#q').value = S.q;
 }
 function renderScope() {
@@ -638,12 +650,14 @@ function render() {
   NOW = Date.now();
   const t0 = performance.now();
   renderSidebar(); renderScope(); syncTopbar(); syncLive();
+  const s = summary(S.p);
+  $('#app').classList.toggle('idle', !META.projects.length || !!(s && s.error && !s.loaded));
   if (!P) { S.nav = []; $('#view').innerHTML = placeholder(); $('#perf').textContent = ''; writeHash(); return; }
   const items = P.items.filter(i => match(i));
-  const s = summary(S.p);
   const banner = s && s.error ? `<div class="banner">${ic('alert')}<div><b>Showing the last good read.</b> The latest refresh failed.<span class="mono small">${esc(s.error)}</span></div></div>` : '';
-  const html = S.view === 'graph' ? renderGraph() : !items.length ? (S.nav = [], empty()) : S.view === 'list' ? renderList(items) : renderBoard(items);
+  const html = S.view === 'graph' && P.issues.length ? renderGraph() : !items.length ? (S.nav = [], empty()) : S.view === 'list' ? renderList(items) : renderBoard(items);
   $('#view').innerHTML = banner + html;
+  if (FLASH.size) paintFlash();
   const dt = performance.now() - t0;
   $('#perf').textContent = `${items.length} of ${P.items.length} issues · rendered in ${dt < 1 ? dt.toFixed(2) : dt.toFixed(1)} ms`;
   writeHash();
@@ -692,7 +706,16 @@ function applySnapshot(snap) {
   const changed = P.issues.filter(i => { const o = prev.get(i.id); return !o || o.updated_at !== i.updated_at; }).map(i => i.id);
   render();
   renderDetail(true);
-  if (changed.length <= 40) changed.forEach(id => document.querySelectorAll(`#view [data-id="${CSS.escape(id)}"]`).forEach(n => n.classList.add('flash')));
+  if (changed.length <= 40) { const t = performance.now(); changed.forEach(id => FLASH.set(id, t)); paintFlash(); }
+}
+// Changed issues stay highlighted across re-renders until the animation ends (1.8 s, as in app.css).
+const FLASH = new Map();
+function paintFlash() {
+  const now = performance.now();
+  for (const [id, t] of FLASH) {
+    if (now - t > 1800) { FLASH.delete(id); continue; }
+    document.querySelectorAll(`#view [data-id="${CSS.escape(id)}"]`).forEach(n => { n.classList.add('flash'); n.style.animationDelay = `${t - now}ms`; });
+  }
 }
 
 /* ---------- actions ---------- */
@@ -780,6 +803,7 @@ function act(a, arg, el) {
     case 'addp-close': return closeAdd();
     case 'fs-up': return AD.dir && AD.dir.parent && browse(AD.dir.parent);
     case 'fs-add': return addFromDialog(arg);
+    case 'fs-open': return openFromDialog(arg);
     case 'pick': return pickFolder();
     case 'toast': { const run = toastAction; $('#toast').classList.remove('on'); toastAction = null; return run && run(); }
     case 'clear': return clearFilter(arg);
@@ -870,13 +894,18 @@ async function browse(path) {
 }
 function paintAdd() {
   const d = AD.dir, nb = d.dirs.filter(x => x.beads).length;
-  $('#addp-bar').innerHTML = `<button class="icon-btn sm" data-act="fs-up" title="Parent folder"${d.parent ? '' : ' disabled'}>${ic('up', '', 13)}</button><span class="mono ell">${esc(d.display)}</span><span class="sp"></span>${d.beads
+  $('#addp-bar').innerHTML = `<button class="icon-btn sm" data-act="fs-up" title="Parent folder"${d.parent ? '' : ' disabled'}>${ic('up', '', 13)}</button><span class="mono ell">${esc(d.display)}</span><span class="sp"></span>${d.project
+    ? `<span class="tag added">added</span><button class="btn sm" data-act="fs-open" data-arg="${esc(d.project)}">Open</button>`
+    : d.beads
     ? `<span class="tag">beads</span><button class="btn sm primary" data-act="fs-add" data-arg="${esc(d.path)}">Add this folder</button>`
     : `<span class="faint">${nb ? `${nb} ${nb > 1 ? 'folders use' : 'folder uses'} beads` : 'No beads folders here'}</span>`}`;
-  $('#addp-list').innerHTML = d.dirs.length ? d.dirs.map((x, k) => `<div class="m-row${k === AD.idx ? ' on' : ''}${x.beads ? ' bd' : ''}" data-fi="${k}" title="${esc(x.path)}">${ic('folder', '', 15)}<span class="ell">${esc(x.name)}</span>${x.beads ? '<span class="tag">beads</span>' : ''}<span class="sp"></span>${x.beads ? `<button class="btn sm" data-act="fs-add" data-arg="${esc(x.path)}">Add</button>` : ic('chevr', 'ch', 13)}</div>`).join('') : '<div class="pal-empty">No folders here</div>';
+  const tail = x => x.project ? `<button class="btn sm" data-act="fs-open" data-arg="${esc(x.project)}">Open</button>`
+    : x.beads ? `<button class="btn sm" data-act="fs-add" data-arg="${esc(x.path)}">Add</button>` : ic('chevr', 'ch', 13);
+  $('#addp-list').innerHTML = d.dirs.length ? d.dirs.map((x, k) => `<div class="m-row${k === AD.idx ? ' on' : ''}${x.beads ? ' bd' : ''}" data-fi="${k}" title="${esc(x.path)}">${ic('folder', '', 15)}<span class="ell">${esc(x.name)}</span>${x.project ? '<span class="tag added">added</span>' : x.beads ? '<span class="tag">beads</span>' : ''}<span class="sp"></span>${tail(x)}</div>`).join('') : '<div class="pal-empty">No folders here</div>';
   const on = $('#addp-list .on'); on && on.scrollIntoView({ block: 'nearest' });
 }
 function enterDir(x) { $('#addp-in').value = ''; addErr(''); browse(x.path); }
+function openFromDialog(id) { closeAdd(); pendingHash = null; switchProject(id); }
 async function addFromDialog(path) {
   if (AD.busy || !path) return;
   AD.busy = true; $('#addp-go').disabled = true; addErr('');
@@ -905,7 +934,7 @@ function addKey(e) {
   else if (e.key === 'ArrowUp' && n) { e.preventDefault(); AD.idx = (AD.idx - 1 + n) % n; paintAdd(); }
   else if (e.key === 'ArrowRight' && x && !typing) { e.preventDefault(); enterDir(x); }
   else if ((e.key === 'ArrowLeft' || e.key === 'Backspace') && !typing && d && d.parent) { e.preventDefault(); browse(d.parent); }
-  else if (e.key === 'Enter' && !typing) { e.preventDefault(); if (x) x.beads ? addFromDialog(x.path) : enterDir(x); else if (d && d.beads) addFromDialog(d.path); }
+  else if (e.key === 'Enter' && !typing) { e.preventDefault(); if (x) x.project ? openFromDialog(x.project) : x.beads ? addFromDialog(x.path) : enterDir(x); else if (d && d.project) openFromDialog(d.project); else if (d && d.beads) addFromDialog(d.path); }
 }
 
 /* ---------- events ---------- */
