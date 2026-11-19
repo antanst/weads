@@ -2,19 +2,19 @@
 
 ## 1. Module setup
 
-- [ ] 1.1 Create `go.mod` (module `weads`), `Makefile` (`build`, `test`, `vet`, `run`), and the package folders, and verify `go build ./...` succeeds
+- [x] 1.1 Create `go.mod` (module `weads`), `Makefile` (`build`, `test`, `vet`, `run`), and the package folders, and verify `go build ./...` succeeds
 
 ## 2. bd adapter
 
-- [ ] 2.1 Implement `internal/bd` (`Where`, `List`, `Comments`, `Config`, `Version`) with a pinned environment (`BEADS_DIR`, `BD_DOLT_LOCAL_ONLY=1`, inherited `BEADS_DIR` removed), and verify with unit tests that run a fake `bd` script
-- [ ] 2.2 Convert bd list JSON to the API issue shape (P0 kept, `parent-child` dropped from deps, empty fields omitted), and verify with a unit test on a bd 1.3.4 fixture
+- [x] 2.1 Implement `internal/bd` (`Where`, `List`, `Comments`, `Config`, `Version`) with a pinned environment (`BEADS_DIR`, `BD_DOLT_LOCAL_ONLY=1`, inherited `BEADS_DIR` removed), and verify with unit tests that run a fake `bd` script
+- [x] 2.2 Convert bd list JSON to the API issue shape (P0 kept, `parent-child` dropped from deps, empty fields omitted), and verify with a unit test on a bd 1.3.4 fixture
 
 ## 3. Projects and live updates
 
-- [ ] 3.1 Implement the store signature (path, size, small-file content; skip locks, `temptf`, mtimes), and verify with a unit test that an mtime bump keeps it and a size or content change alters it
-- [ ] 3.2 Implement the registry file (load, atomic save, `-config` path) and the Manager add, remove, list, and id-suffix rules, and verify with unit tests for add, duplicate, subdirectory, non-beads, suffix, remove, and reload
-- [ ] 3.3 Implement the refresh loop (1 s check, refresh on change, 10 s fallback for server mode, no overlap, last good snapshot kept on error) and subscriber fan-out, and verify with a unit test that a store change produces exactly one `issues` event and identical data produces none
-- [ ] 3.4 Resolve the current actor (bd order) and Jira base URL per project, and verify with a unit test of the actor order
+- [x] 3.1 Implement the store signature (path, size, small-file content; skip locks, `temptf`, mtimes), and verify with a unit test that an mtime bump keeps it and a size or content change alters it
+- [x] 3.2 Implement the registry file (load, atomic save, `-config` path) and the Manager add, remove, list, and id-suffix rules, and verify with unit tests for add, duplicate, subdirectory, non-beads, suffix, remove, and reload
+- [x] 3.3 Implement the refresh loop (1 s check, refresh on change, 10 s fallback for server mode, no overlap, last good snapshot kept on error) and subscriber fan-out, and verify with a unit test that a store change produces exactly one `issues` event and identical data produces none
+- [x] 3.4 Resolve the current actor (bd order) and Jira base URL per project, and verify with a unit test of the actor order
 
 ## 4. HTTP server
 
