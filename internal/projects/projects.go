@@ -23,7 +23,7 @@ import (
 )
 
 const (
-	checkInterval    = time.Second
+	checkInterval    = 2500 * time.Millisecond
 	fallbackInterval = 10 * time.Second
 )
 

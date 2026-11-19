@@ -9,7 +9,7 @@ browsers, without polling `bd` and without slowing agents that write the store.
 
 ### Requirement: Store signature check
 
-weads SHALL check each registered embedded store once per second by computing a
+weads SHALL check each registered embedded store every 2.5 seconds by computing a
 signature from file names and sizes under the store directory, plus the content
 of files of 4 KiB or less. Lock files, Dolt temp files, and the journal index
 (`journal.idx`) SHALL NOT count. File modification times SHALL NOT count.

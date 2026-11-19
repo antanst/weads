@@ -29,7 +29,8 @@ Blocked when status is `blocked` or an open issue it depends on through
 
 The board SHALL show columns Ready, In progress, Blocked, Deferred (only when a
 deferred issue exists), and Closed. Swimlanes by epic SHALL be on by default and
-toggle with `s`. Ready SHALL sort like `bd ready`: priority, then created time,
+toggle with `s`. A hairline that fades to the right SHALL separate each lane from
+the one above it. Ready SHALL sort like `bd ready`: priority, then created time,
 then id. Closed SHALL show the 3 most recent per lane with a "+N more" control.
 
 #### Scenario: Ready order

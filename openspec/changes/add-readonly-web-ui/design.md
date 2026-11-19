@@ -25,7 +25,7 @@ source, measured on the go-drip workspace (22 issues).
 
 **Goals:**
 
-- Show a change made by an agent within about 1.5 s.
+- Show a change made by an agent within about 3 s.
 - Start no bd process while the store is idle.
 - Keep the approved mockup's look and interaction exactly, minus mockup-only
   parts (fake lease, intro card, theme toggle, hardcoded user and Jira URL).
@@ -51,7 +51,7 @@ because the export is optional and can be stale.
 
 ### Detect changes with a file signature, not by polling bd
 
-A loop runs once per second. For each embedded project it walks the store
+A loop runs every 2.5 seconds. For each embedded project it walks the store
 directory and builds a signature from relative path and size of every file,
 plus the content of files of 4 KiB or less (manifests, repo state). It skips
 `LOCK`, `.lock`, `temptf/`, and `journal.idx`, and ignores modification times,
