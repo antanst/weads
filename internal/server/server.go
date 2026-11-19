@@ -200,7 +200,7 @@ type dirEntry struct {
 }
 
 // browse lists the subdirectories of a directory and marks the ones that
-// contain .beads. It never lists files.
+// use beads. It never lists files.
 func (s *Server) browse(w http.ResponseWriter, r *http.Request) {
 	p := r.URL.Query().Get("path")
 	if p == "" {
@@ -225,7 +225,7 @@ func (s *Server) browse(w http.ResponseWriter, r *http.Request) {
 		if !e.IsDir() && (e.Type()&fs.ModeSymlink == 0 || !isDir(full)) {
 			continue
 		}
-		dirs = append(dirs, dirEntry{Name: e.Name(), Path: full, Beads: isDir(filepath.Join(full, ".beads"))})
+		dirs = append(dirs, dirEntry{Name: e.Name(), Path: full, Beads: usesBeads(full)})
 	}
 	slices.SortFunc(dirs, func(a, b dirEntry) int { return strings.Compare(strings.ToLower(a.Name), strings.ToLower(b.Name)) })
 	parent := filepath.Dir(dir)
@@ -236,7 +236,7 @@ func (s *Server) browse(w http.ResponseWriter, r *http.Request) {
 		"path":    dir,
 		"display": projects.Tildify(dir),
 		"parent":  parent,
-		"beads":   isDir(filepath.Join(dir, ".beads")),
+		"beads":   usesBeads(dir),
 		"dirs":    dirs,
 	})
 }
@@ -272,6 +272,18 @@ func (s *Server) pick(w http.ResponseWriter, r *http.Request) {
 		path = strings.TrimSuffix(path, "/")
 	}
 	writeJSON(w, http.StatusOK, map[string]string{"path": path})
+}
+
+// usesBeads reports whether dir/.beads holds a project, using bd's own markers.
+// A bare ~/.beads holds only bd's metrics state, so the directory alone is not enough.
+func usesBeads(dir string) bool {
+	beads := filepath.Join(dir, ".beads")
+	for _, f := range []string{"metadata.json", "config.yaml"} {
+		if _, err := os.Stat(filepath.Join(beads, f)); err == nil {
+			return true
+		}
+	}
+	return isDir(filepath.Join(beads, "embeddeddolt")) || isDir(filepath.Join(beads, "dolt"))
 }
 
 func isDir(path string) bool {

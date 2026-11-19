@@ -189,7 +189,7 @@ func TestBrowse(t *testing.T) {
 	home := t.TempDir()
 	t.Setenv("HOME", home)
 	work := filepath.Join(home, "work")
-	for _, d := range []string{"alpha/.beads", "Beta", ".hidden/.beads"} {
+	for _, d := range []string{"alpha/.beads/embeddeddolt", "Beta/.beads/eventsData", ".hidden/.beads/embeddeddolt"} {
 		if err := os.MkdirAll(filepath.Join(work, d), 0o755); err != nil {
 			t.Fatal(err)
 		}
