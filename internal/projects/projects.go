@@ -380,7 +380,7 @@ func (p *project) summary() Summary {
 		ID:       p.id,
 		Name:     name,
 		Path:     p.root,
-		Display:  tildify(p.root),
+		Display:  Tildify(p.root),
 		BeadsDir: p.ws.BeadsDir,
 		Loaded:   p.loaded,
 		Issues:   p.total,
@@ -474,7 +474,8 @@ func ExpandHome(path string) (string, error) {
 	return filepath.Clean(path), nil
 }
 
-func tildify(path string) string {
+// Tildify shortens a path under the home directory to start with ~.
+func Tildify(path string) string {
 	home, err := os.UserHomeDir()
 	if err != nil || home == "" {
 		return path
