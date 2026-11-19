@@ -1,0 +1,6 @@
+# Design brainstorm output (contains real project data)
+.superpowers/
+
+# Build output
+/weads
+/dist/
