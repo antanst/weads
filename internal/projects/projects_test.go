@@ -52,8 +52,9 @@ func TestSignature(t *testing.T) {
 	write("db/.dolt/noms/LOCK", "held")
 	write(".lock", "held")
 	write("db/.dolt/temptf/metrics", "22")
+	write("db/.dolt/noms/journal.idx", "half-rewritten")
 	if sig() != base {
-		t.Error("signature changed on mtime, lock, or temp file changes, as a read causes")
+		t.Error("signature changed on mtime, lock, temp file, or journal index changes, as a read causes")
 	}
 
 	write("db/.dolt/noms/manifest", "5:root-bbbb")

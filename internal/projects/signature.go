@@ -15,8 +15,8 @@ import (
 const smallFile = 4096
 
 // signature summarizes a store directory by relative path and size of each
-// file, plus the content of small files. It ignores modification times
-// because bd --readonly reads update them, and skips locks and temp files.
+// file, plus the content of small files. It skips what a read touches:
+// modification times, locks, temp files, and the journal index.
 func signature(dir string) (string, error) {
 	h := sha256.New()
 	err := filepath.WalkDir(dir, func(path string, d fs.DirEntry, err error) error {
@@ -33,7 +33,9 @@ func signature(dir string) (string, error) {
 			}
 			return nil
 		}
-		if name == "LOCK" || name == ".lock" || !d.Type().IsRegular() {
+		// Every reader rewrites journal.idx in place, so its size flaps mid-read.
+		// It is derived from the journal, which every write appends to.
+		if name == "LOCK" || name == ".lock" || name == "journal.idx" || !d.Type().IsRegular() {
 			return nil
 		}
 		info, err := d.Info()
