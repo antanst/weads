@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="dark light">
+<title>weads</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="preload" href="/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/jetbrains-mono-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/app.css">
+<script src="/app.js" defer></script>
+</head>
+<body>
+<div class="app" id="app">
+  <aside class="sidebar" id="sidebar"></aside>
+  <main class="main">
+    <header class="topbar" id="topbar"></header>
+    <div class="scopebar" id="scopebar"></div>
+    <section class="view" id="view"></section>
+    <footer class="statusbar" id="statusbar"></footer>
+  </main>
+  <aside class="detail" id="detail" aria-hidden="true"></aside>
+</div>
+<div class="pal-bg" id="pal" hidden>
+  <div class="pal" role="dialog" aria-label="Jump to">
+    <div class="pal-in" id="pal-in"></div>
+    <div class="pal-list" id="pl"></div>
+    <div class="pal-foot" id="pal-foot"></div>
+  </div>
+</div>
+<div class="pal-bg" id="addp" hidden>
+  <div class="pal modal" role="dialog" aria-labelledby="addp-title">
+    <div class="m-head"><b id="addp-title">Add project</b><span class="faint">Choose a folder that uses beads</span><span class="sp"></span><button class="icon-btn sm" data-act="addp-close" title="Close (Esc)" id="addp-x"></button></div>
+    <form class="m-path" id="addp-form" autocomplete="off">
+      <label class="m-in" id="addp-label"><input id="addp-in" placeholder="~/work/my-project" spellcheck="false" aria-label="Folder path"></label>
+      <button class="btn primary" id="addp-go" type="submit">Add</button>
+    </form>
+    <div class="m-err" id="addp-err" role="alert"></div>
+    <div class="m-bar" id="addp-bar"></div>
+    <div class="m-list" id="addp-list"></div>
+    <div class="m-foot" id="addp-foot"></div>
+  </div>
+</div>
+<div class="toast" id="toast" role="status"></div>
+</body>
+</html>
