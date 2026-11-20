@@ -45,7 +45,6 @@ const IC = {
   user: '<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',
   clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
   check: '<path d="m5 12.5 4.5 4.5L19 7.5"/>',
-  reply: '<path d="M15 10l5 5-5 5"/><path d="M4 4v7a4 4 0 0 0 4 4h12"/>',
   back: '<path d="M19 12H5M11 18l-6-6 6-6"/>',
   up: '<path d="M12 19V5M6 11l6-6 6 6"/>',
   plus: '<path d="M12 5v14M5 12h14"/>',
@@ -257,7 +256,6 @@ function why(i) {
     if (!b.length) return `<div class="c-why blocked">Status set to blocked</div>`;
     return `<div class="c-why blocked"><span>Waiting on <span class="mono ref" data-open="${esc(b[0].id)}">${esc(short(b[0].id))}</span></span><span class="w-st">${sicon(b[0].state, 11)}${ST[b[0].state].name.toLowerCase()}</span>${b.length > 1 ? `<span class="faint">+${b.length - 1}</span>` : ''}</div>`;
   }
-  if (i.state === 'closed' && i.close_reason) return `<div class="c-why">${ic('reply', '', 12)}<span class="clamp2">${esc(i.close_reason)}</span></div>`;
   if (i.state === 'progress') {
     if (isLive(i)) return `<div class="c-why live-row"><span class="live"></span>Agent active · lease ${remain(i.lease_expires_at)} left</div>`;
     if (i.lease_expires_at) return `<div class="c-why stale">${ic('clock', '', 12)}<span>Claimed ${rel(i.started_at)} ago · lease expired</span></div>`;
@@ -327,12 +325,11 @@ function renderBoard(items) {
 function rowWhy(i) {
   if (i.state === 'blocked' && i.openBlockers.length) return `<span class="r-why blocked">waiting on ${esc(i.openBlockers.map(b => short(b.id)).join(', '))}</span>`;
   if (isLive(i)) return `<span class="r-why" style="color:var(--ready)">agent active</span>`;
-  if (i.state === 'closed' && i.close_reason) return `<span class="r-why">${esc(i.close_reason)}</span>`;
   return '';
 }
 function renderList(items) {
   const nav = [];
-  let h = '<div class="list">';
+  let h = `<div class="list" style="--idn:${Math.max(...items.map(i => short(i.id).length))}">`;
   for (const s of ['ready', 'progress', 'blocked', 'deferred', 'closed']) {
     const g = items.filter(i => i.state === s).sort(SORT[s]);
     if (!g.length) continue;
@@ -340,7 +337,7 @@ function renderList(items) {
     for (const i of g) {
       nav.push(i.id);
       const ep = i.parent && P.byId.get(i.parent);
-      h += `<div class="row ${cls(i)}" data-id="${esc(i.id)}"><span title="P${i.priority}">${prio(i.priority)}</span>${sicon(i.state)}<span class="mono r-id">${esc(short(i.id))}</span>${tico(i.type)}<span class="r-title"><span class="r-t">${hl(i.title)}</span>${rowWhy(i)}</span><span class="r-labels">${labelChips(i, 2)}${ep ? `<span class="epic-chip">${tico('epic', 11)}${esc(trunc(ep.title, 26))}</span>` : ''}</span>${avatar(i.assignee) || '<span></span>'}<span class="c-age">${rel(i.state === 'closed' ? i.closed_at : i.updated_at)}</span></div>`;
+      h += `<div class="row ${cls(i)}" data-id="${esc(i.id)}"><span title="P${i.priority}">${prio(i.priority)}</span>${sicon(i.state)}<span class="mono r-id">${esc(short(i.id))}</span>${tico(i.type)}<span class="r-title"><span class="r-t" title="${esc(i.title)}">${hl(i.title)}</span>${rowWhy(i)}</span><span class="r-labels">${labelChips(i, 2)}${ep ? `<span class="epic-chip">${tico('epic', 11)}${esc(trunc(ep.title, 26))}</span>` : ''}</span>${avatar(i.assignee) || '<span></span>'}${i.state === 'closed' ? `<span class="c-age" title="Closed ${esc(fmtAbs(i.closed_at))}">${rel(i.closed_at)}</span>` : `<span class="c-age" title="Updated ${esc(fmtAbs(i.updated_at))}">${rel(i.updated_at)}</span>`}</div>`;
     }
   }
   S.nav = [nav];
@@ -583,7 +580,7 @@ function renderSidebar() {
   let h = `<div class="brand">${LOGO()}<b>weads</b><button class="kbtn" data-act="palette" title="Jump to (⌘K)">${ic('search', '', 13)}<kbd>⌘K</kbd></button></div>
   <div class="sb-sec"><div class="sb-h">Projects</div>${projs}<div class="sb-item sb-add" data-act="addp">${ic('plus', '', 12)}<span>Add project</span></div></div>`;
   if (P) {
-    const c = s => P.items.filter(i => i.state === s).length;
+    const c = s => P.items.filter(i => i.state === s && match(i, true)).length;
     const labels = new Map();
     P.items.forEach(i => (i.labels || []).forEach(l => labels.set(l, (labels.get(l) || 0) + 1)));
     const epics = P.epics.slice().sort((a, b) => (doneOf(a) === a.children.length) - (doneOf(b) === b.children.length) || a.priority - b.priority);
@@ -669,6 +666,7 @@ function writeHash() {
   if (S.view !== 'board') h.set('view', S.view);
   if (S.view === 'graph' && S.graphEpic) h.set('g', S.graphEpic);
   for (const k of ['epic', 'label', 'queue', 'q', 'open']) if (S[k]) h.set(k, S[k]);
+  if (S.quick.size) h.set('quick', [...S.quick].join(','));
   history.replaceState(null, '', '#' + h);
 }
 
@@ -693,6 +691,7 @@ function applySnapshot(snap) {
       Object.assign(S, {
         view: VNAME[H.get('view')] ? H.get('view') : 'board', graphEpic: known(H.get('g')), epic: known(H.get('epic')),
         label: H.get('label'), queue: ST[H.get('queue')] ? H.get('queue') : null, q: H.get('q') || '',
+        quick: new Set((H.get('quick') || '').split(',').filter(k => Object.hasOwn(QNAME, k))),
       });
       open = known(H.get('open'));
     }

@@ -181,7 +181,6 @@ kbd{font:500 10.5px/1 Inter,system-ui,sans-serif;min-width:17px;height:17px;padd
 .c-why.stale{color:color-mix(in srgb,var(--progress) 70%,var(--text-3))}
 .c-why .ref{color:inherit;font-weight:600}
 .w-st{display:inline-flex;align-items:center;gap:4px;color:var(--text-3)}
-.clamp2{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .c-meta{display:flex;align-items:center;gap:5px;margin-top:8px;min-height:18px;min-width:0}
 /* One fixed-height wrapping row: chips that do not fit wrap out of sight whole. */
 .c-lbls{display:flex;flex-wrap:wrap;align-items:center;gap:12px 5px;height:19px;overflow:hidden;min-width:min-content}
@@ -212,7 +211,8 @@ kbd{font:500 10.5px/1 Inter,system-ui,sans-serif;min-width:17px;height:17px;padd
 .list{padding-bottom:60px}
 .grp{position:sticky;top:0;z-index:2;display:flex;align-items:center;gap:8px;height:34px;padding:0 18px;background:var(--bg-2);border-bottom:1px solid var(--border);border-top:1px solid var(--border);font-weight:600;font-size:12.5px;margin-top:-1px}
 .grp .count{color:var(--text-3);font-weight:450}
-.row{display:grid;grid-template-columns:16px 16px 54px 16px minmax(0,1fr) fit-content(38%) 18px 30px;align-items:center;gap:10px;height:38px;padding:0 18px;border-bottom:1px solid var(--border);cursor:pointer;border-left:2px solid transparent;box-shadow:none}
+/* --idn = longest short id in the list; 6.9px = one JetBrains Mono glyph at 11.5px. */
+.row{display:grid;grid-template-columns:16px 16px max(54px,calc(var(--idn,3) * 6.9px)) 16px minmax(0,1fr) fit-content(38%) 18px 30px;align-items:center;gap:10px;height:38px;padding:0 18px;border-bottom:1px solid var(--border);cursor:pointer;border-left:2px solid transparent;box-shadow:none}
 .row:hover{background:var(--hover)}
 .row.sel{background:var(--accent-soft);border-left-color:var(--accent);box-shadow:none!important}
 .row.opened{background:color-mix(in srgb,var(--accent) 7%,transparent)}
@@ -222,9 +222,11 @@ kbd{font:500 10.5px/1 Inter,system-ui,sans-serif;min-width:17px;height:17px;padd
 .st-closed .r-t{color:var(--text-2)}
 .r-why{font-size:12px;color:var(--text-3);overflow:hidden;text-overflow:ellipsis;flex:1 1 0;min-width:0}
 .r-why.blocked{color:color-mix(in srgb,var(--blocked) 75%,var(--text-3))}
+/* Epic chip goes first (order:-1), so labels wrap out of sight before it does. */
 .r-labels{display:flex;flex-wrap:wrap;gap:12px 5px;align-items:center;justify-content:flex-end;height:19px;max-width:290px;overflow:hidden}
+.r-labels .epic-chip{order:-1}
 @container main (max-width:760px){.r-labels .epic-chip{display:none}}
-@container main (max-width:560px){.row{grid-template-columns:16px 16px 54px 16px minmax(0,1fr) 18px 30px}.r-labels{display:none}}
+@container main (max-width:560px){.row{grid-template-columns:16px 16px max(54px,calc(var(--idn,3) * 6.9px)) 16px minmax(0,1fr) 18px 30px}.r-labels{display:none}}
 
 /* graph */
 .g-head{position:sticky;left:0;padding:14px 18px 4px;display:flex;flex-direction:column;gap:12px;width:min(100%,calc(100vw - 260px))}
