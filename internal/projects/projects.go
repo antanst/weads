@@ -19,7 +19,7 @@ import (
 
 	"golang.org/x/sync/errgroup"
 
-	"weads/internal/bd"
+	"github.com/antanst/weads/internal/bd"
 )
 
 const (

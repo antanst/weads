@@ -1,4 +1,4 @@
-module weads
+module github.com/antanst/weads
 
 go 1.27.3
 

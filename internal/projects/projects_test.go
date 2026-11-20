@@ -13,8 +13,8 @@ import (
 	"testing"
 	"time"
 
-	"weads/internal/bd"
-	"weads/internal/bd/bdfake"
+	"github.com/antanst/weads/internal/bd"
+	"github.com/antanst/weads/internal/bd/bdfake"
 )
 
 func TestSignature(t *testing.T) {

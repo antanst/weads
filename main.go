@@ -16,11 +16,11 @@ import (
 	"syscall"
 	"time"
 
-	"weads/internal/bd"
-	"weads/internal/config"
-	"weads/internal/projects"
-	"weads/internal/server"
-	"weads/web"
+	"github.com/antanst/weads/internal/bd"
+	"github.com/antanst/weads/internal/config"
+	"github.com/antanst/weads/internal/projects"
+	"github.com/antanst/weads/internal/server"
+	"github.com/antanst/weads/web"
 )
 
 func main() {

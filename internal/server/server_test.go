@@ -14,9 +14,9 @@ import (
 	"testing/fstest"
 	"time"
 
-	"weads/internal/bd"
-	"weads/internal/bd/bdfake"
-	"weads/internal/projects"
+	"github.com/antanst/weads/internal/bd"
+	"github.com/antanst/weads/internal/bd/bdfake"
+	"github.com/antanst/weads/internal/projects"
 )
 
 func newTestServer(t *testing.T) (*Server, http.Handler) {

@@ -9,8 +9,8 @@ import (
 	"strings"
 	"testing"
 
-	"weads/internal/bd"
-	"weads/internal/bd/bdfake"
+	"github.com/antanst/weads/internal/bd"
+	"github.com/antanst/weads/internal/bd/bdfake"
 )
 
 // listFixture follows the bd 1.3.4 `list --json` shape, including fields the

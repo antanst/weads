@@ -18,7 +18,7 @@ import (
 	"sync"
 	"time"
 
-	"weads/internal/projects"
+	"github.com/antanst/weads/internal/projects"
 )
 
 const csp = "default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; " +

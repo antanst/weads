@@ -7,3 +7,9 @@
 # Build output
 /weads
 /dist/
+
+# macOS metadata files
+._*
+
+# Editor backups (.env~ holds local paths)
+*~
