@@ -79,7 +79,7 @@ function prio(p, s = 14) {
   const filled = { 1: 3, 2: 2, 3: 1 }[p] || 0;
   return `<svg class="ic" width="${s}" height="${s}" viewBox="0 0 16 16" aria-label="P${p}" style="color:var(--text-2)">${[0, 1, 2].map(k => `<rect x="${2 + k * 4.5}" y="${13.5 - (4.5 + k * 3.5)}" width="3" height="${4.5 + k * 3.5}" rx="1" fill="${k < filled ? 'currentColor' : 'var(--text-4)'}"/>`).join('')}</svg>`;
 }
-const LOGO = (s = 22) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 15Q12 5 22 15" fill="none" stroke="var(--border-2)" stroke-width="1.3"/><circle cx="6" cy="11.8" r="3.1" fill="var(--closed)"/><circle cx="12" cy="10" r="3.1" fill="var(--progress)"/><circle cx="18" cy="11.8" r="2.4" fill="var(--bg-2)" stroke="var(--ready)" stroke-width="1.5"/></svg>`;
+const LOGO = (s = 22) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" aria-hidden="true"><g fill="none" stroke="var(--logo-stem)" stroke-width="2.3" stroke-linecap="round"><path d="M12 22.6Q10.2 14.6 4.2 9.8"/><path d="M12 22.6V4.2"/><path d="M12 22.6Q13.8 14.6 19.8 9.8"/></g><circle cx="4.2" cy="9.8" r="3.8" fill="var(--closed)"/><circle cx="12" cy="4.2" r="3.8" fill="var(--progress)"/><circle cx="19.8" cy="9.8" r="3.8" fill="var(--ready)"/></svg>`;
 
 /* ---------- server data ---------- */
 // META is the project list; SNAP is the current project's snapshot; P is the model built from it.
