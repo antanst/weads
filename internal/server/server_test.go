@@ -30,6 +30,7 @@ func newTestServer(t *testing.T) (*Server, http.Handler) {
 		bdVersion: "9.9.9",
 		assets:    fstest.MapFS{"index.html": {Data: []byte("<!doctype html><title>weads</title>")}},
 		keepalive: 20 * time.Millisecond,
+		host:      "192.168.1.10",
 	}
 	return s, s.routes()
 }
@@ -57,6 +58,7 @@ func TestGuard(t *testing.T) {
 		{"localhost", "GET", "localhost:7707", "", "", http.StatusOK},
 		{"ipv4 loopback", "GET", "127.0.0.1:7707", "", "", http.StatusOK},
 		{"ipv6 loopback", "GET", "[::1]:7707", "", "", http.StatusOK},
+		{"listen address host", "GET", "192.168.1.10:7707", "", "", http.StatusOK},
 		{"post without origin", "POST", "127.0.0.1:7707", "", nonBeads, http.StatusForbidden},
 		{"cross-site post", "POST", "127.0.0.1:7707", "http://evil.example", nonBeads, http.StatusForbidden},
 		{"same-origin post", "POST", "127.0.0.1:7707", "http://127.0.0.1:7707", nonBeads, http.StatusUnprocessableEntity},

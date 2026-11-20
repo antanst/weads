@@ -49,6 +49,10 @@ A .env file in the current directory fills in unset environment variables:
 		flag.PrintDefaults()
 	}
 	flag.Parse()
+	host, _, err := net.SplitHostPort(*addr)
+	if err != nil {
+		return fmt.Errorf("bad -addr %q: %w", *addr, err)
+	}
 	if *file == "" {
 		return errors.New("no user config directory; pass -config")
 	}
@@ -88,7 +92,7 @@ A .env file in the current directory fills in unset environment variables:
 		return err
 	}
 	srv := &http.Server{
-		Handler:           server.New(m, version, web.FS),
+		Handler:           server.New(m, version, web.FS, host),
 		ReadHeaderTimeout: 10 * time.Second,
 		BaseContext:       func(net.Listener) context.Context { return ctx },
 	}

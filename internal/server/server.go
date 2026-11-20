@@ -33,18 +33,21 @@ type Server struct {
 	m         *projects.Manager
 	bdVersion string
 	assets    fs.FS
+	host      string // host part of the listen address
 	keepalive time.Duration
 	picker    bool
 	picking   sync.Mutex
 }
 
-// New returns the HTTP handler for weads, wrapped in the security guard.
-func New(m *projects.Manager, bdVersion string, assets fs.FS) http.Handler {
+// New returns the HTTP handler for weads, wrapped in the security guard. The
+// host is the host part of the listen address.
+func New(m *projects.Manager, bdVersion string, assets fs.FS, host string) http.Handler {
 	_, err := exec.LookPath("osascript")
 	s := &Server{
 		m:         m,
 		bdVersion: bdVersion,
 		assets:    assets,
+		host:      host,
 		keepalive: 25 * time.Second,
 		picker:    runtime.GOOS == "darwin" && err == nil,
 	}
@@ -62,19 +65,20 @@ func (s *Server) routes() http.Handler {
 	mux.HandleFunc("GET /api/fs", s.browse)
 	mux.HandleFunc("POST /api/pick", s.pick)
 	mux.Handle("GET /", http.FileServerFS(s.assets))
-	return guard(mux)
+	return s.guard(mux)
 }
 
-// guard sets security headers, rejects non-loopback Host headers (DNS
-// rebinding), and rejects state changes from other origins (CSRF).
-func guard(next http.Handler) http.Handler {
+// guard sets security headers, rejects Host headers that name neither a
+// loopback address nor this server's listen host (DNS rebinding), and rejects
+// state changes from other origins (CSRF).
+func (s *Server) guard(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		h := w.Header()
 		h.Set("Content-Security-Policy", csp)
 		h.Set("X-Content-Type-Options", "nosniff")
 		h.Set("Referrer-Policy", "no-referrer")
-		if !loopbackHost(r.Host) {
-			http.Error(w, "weads only answers on localhost", http.StatusForbidden)
+		if !s.hostOK(r.Host) {
+			http.Error(w, "weads does not serve this host", http.StatusForbidden)
 			return
 		}
 		if r.Method != http.MethodGet && r.Method != http.MethodHead && r.Header.Get("Origin") != "http://"+r.Host {
@@ -85,12 +89,17 @@ func guard(next http.Handler) http.Handler {
 	})
 }
 
-func loopbackHost(host string) bool {
+// hostOK reports whether a Host header names this server: a loopback alias or
+// the configured listen host.
+func (s *Server) hostOK(host string) bool {
 	if h, _, err := net.SplitHostPort(host); err == nil {
 		host = h
 	}
 	host = strings.TrimSuffix(strings.TrimPrefix(host, "["), "]")
-	return host == "localhost" || host == "127.0.0.1" || host == "::1"
+	if host == "localhost" || host == "127.0.0.1" || host == "::1" {
+		return true
+	}
+	return host != "" && host == s.host
 }
 
 func (s *Server) listProjects(w http.ResponseWriter, r *http.Request) {
