@@ -43,8 +43,8 @@ Then open <http://127.0.0.1:7707>.
 A `.env` file in the current directory fills in unset environment variables:
 
 ```sh
-WEADS_WORK_DIR=~/work                 # add each top-level folder that uses beads
-WEADS_PROJECTS=~/a/proj1,~/b/proj2    # add these folders
+WEADS_WORK_DIR=~/work                 # scans each top-level folder inside this folder that uses beads, or alternatively:
+WEADS_PROJECTS=~/a/proj1,~/b/proj2    # add these folders manually
 ```
 
 ## Docker
