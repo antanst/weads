@@ -4,7 +4,7 @@
 
 <h1 align="center">weads</h1>
 
-<p align="center">A fast, read-only web UI for <a href="https://github.com/steveyegge/beads">beads</a> projects.</p>
+<p align="center">A fast, read-only web UI for projects that use the <a href="https://github.com/steveyegge/beads">beads</a> graph issue tracker.</p>
 
 ---
 
