@@ -8,6 +8,10 @@
 
 ---
 
+<p align="center">
+  <img src="docs/graph.png" alt="weads dependency graph view">
+</p>
+
 weads shows the issues of one or more beads projects in your browser. It reads
 each project through the `bd` CLI and never writes to it. When an agent or a
 person changes a store, open pages update live.
